@@ -11,8 +11,7 @@
 |---|---|---|---|
 | 1 | Знакомство с OpenCL: буферы, ядра, выбор устройства | [lab1/](lab1/README.md) | готово |
 
-Отчёт последней сборки на GitHub Pages:
-`https://whitehusky555.github.io/OpenCL-in-specialized-computing/`
+Отчёт последней сборки: [логи и вывод программ на GitHub Pages](https://whitehusky555.github.io/OpenCL-in-specialized-computing/).
 
 ## Структура репозитория
 
@@ -63,7 +62,8 @@ cmake --build build --config Release
 * **Windows** — сборка MSVC; `.exe` и `.cl` кладутся в артефакты запуска
   (Actions → запуск → Artifacts), их можно скачать и не собирать самому;
 * **Pages** — [`ci/report.py`](ci/report.py) собирает логи сборки и вывод программ
-  в одну статическую страницу.
+  в одну статическую страницу и публикует её:
+  [whitehusky555.github.io/OpenCL-in-specialized-computing](https://whitehusky555.github.io/OpenCL-in-specialized-computing/).
 
 Видеокарты на раннерах нет, POCL даёт только устройство типа CPU: программы,
 запрашивающие `CL_DEVICE_TYPE_GPU`, на сервере сообщают об отсутствии GPU.
