@@ -127,12 +127,6 @@ jobs:
           name: windows-output
           path: ci-out/windows
 
-      # enablement: true включает Pages в репозитории, если это ещё не сделано,
-      # иначе deploy-pages отвечает 404
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
       - name: Формирование страницы отчёта
         run: python3 ci/report.py ci-out site
 

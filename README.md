@@ -65,10 +65,6 @@ cmake --build build --config Release
 * **Pages** — [`ci/report.py`](ci/report.py) собирает логи сборки и вывод программ
   в одну статическую страницу.
 
-Pages включается автоматически при первом запуске (`actions/configure-pages`
-с `enablement: true`). Если организация запрещает включать Pages из workflow,
-сделайте это руками: **Settings → Pages → Source → GitHub Actions**.
-
 Видеокарты на раннерах нет, POCL даёт только устройство типа CPU: программы,
 запрашивающие `CL_DEVICE_TYPE_GPU`, на сервере сообщают об отсутствии GPU.
 Сборку это не ломает.
