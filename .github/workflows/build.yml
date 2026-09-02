@@ -38,12 +38,26 @@ jobs:
           RUSTICL_ENABLE: llvmpipe
         working-directory: build/bin
         run: |
+          out=../../ci-out/linux/run
+          # На раннере нет видеокарты, поэтому программы, которым нужен GPU,
+          # штатно завершаются с кодом 1. Падать job должен только если
+          # сломалось то, что здесь обязано работать.
+          required="task5_device_info task3_helloworld_cpu"
+          status=0
+
           for f in task5_device_info task3_helloworld_cpu task1_add_k task2_helloworld_gpu task4_vector_mul; do
-            ./$f < /dev/null > "../../ci-out/linux/run/$f.txt" 2>&1
-            echo $? > "../../ci-out/linux/run/$f.exit"
-            echo "--- $f (код $(cat ../../ci-out/linux/run/$f.exit)) ---"
-            cat "../../ci-out/linux/run/$f.txt"
+            if ./$f < /dev/null > "$out/$f.txt" 2>&1; then code=0; else code=$?; fi
+            echo $code > "$out/$f.exit"
+
+            echo "--- $f (код $code) ---"
+            cat "$out/$f.txt"
+
+            case " $required " in
+              *" $f "*) if [ $code -ne 0 ]; then status=1; fi ;;
+            esac
           done
+
+          exit $status
 
       - uses: actions/upload-artifact@v4
         with:
@@ -65,14 +79,16 @@ jobs:
           cmake -S . -B build -A x64 -DLAB_FORCE_KHRONOS_OPENCL=ON 2>&1 | tee ci-out/windows/build.log
           cmake --build build --config Release -j 2>&1 | tee -a ci-out/windows/build.log
 
-      - name: Запуск (на раннере нет устройств OpenCL, ожидается сообщение об этом)
+      - name: Запуск (устройств OpenCL на раннере нет, ожидается сообщение об этом)
         shell: bash
         working-directory: build/bin
         run: |
-          ./task5_device_info.exe < /dev/null > "../../ci-out/windows/run/task5_device_info.txt" 2>&1
-          echo $? > "../../ci-out/windows/run/task5_device_info.exit"
-          cat "../../ci-out/windows/run/task5_device_info.txt"
-        continue-on-error: true
+          out=../../ci-out/windows/run
+          f=task5_device_info
+          if ./$f.exe < /dev/null > "$out/$f.txt" 2>&1; then code=0; else code=$?; fi
+          echo $code > "$out/$f.exit"
+          echo "--- $f (код $code) ---"
+          cat "$out/$f.txt"
 
       - uses: actions/upload-artifact@v4
         with:
