@@ -1,0 +1,59 @@
+# Библиотеки и заголовки OpenCL не хранятся в репозитории:
+# CMake берёт их из установленного SDK или скачивает у Khronos.
+AMD APP/
+
+# Каталоги сборки
+build/
+build-*/
+out/
+bin/
+ci-out/
+site/
+Debug/
+Release/
+x64/
+Win32/
+
+# Результаты сборки
+*.exe
+*.bin
+*.obj
+*.o
+*.ilk
+*.pdb
+*.exp
+*.idb
+lab1/task1_add_k
+lab1/task2_helloworld_gpu
+lab1/task3_helloworld_cpu
+lab1/task4_vector_mul
+lab1/task5_device_info
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.VC.db
+*.aps
+CMakeUserPresets.json
+
+# Установщик Intel OpenCL runtime (86 МБ, качается с сайта Intel)
+w_opencl_runtime_*.exe
+
+# Архив с исходными материалами
+Лаб1.zip
+
+# Утилита просмотра параметров OpenCL из методички (Delphi)
+OCL_info/
+
+# Справочники, свободно доступные в сети
+OPENCL.ppt
+opencl-1.2.pdf
+
+# Прочее
+*.log
+Thumbs.db
+desktop.ini

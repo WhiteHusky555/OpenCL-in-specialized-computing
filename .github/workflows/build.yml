@@ -1,0 +1,121 @@
+name: build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Ubuntu (g++ + POCL)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установка OpenCL ICD и программных устройств
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ocl-icd-opencl-dev pocl-opencl-icd clinfo
+          # даёт устройство типа GPU (llvmpipe), если пакет есть в репозитории
+          sudo apt-get install -y mesa-opencl-icd || true
+
+      - name: Конфигурирование и сборка
+        run: |
+          set -o pipefail
+          mkdir -p ci-out/linux/run
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release 2>&1 | tee ci-out/linux/build.log
+          cmake --build build -j 2>&1 | tee -a ci-out/linux/build.log
+
+      - name: Список устройств OpenCL на раннере
+        run: clinfo --list > ci-out/linux/clinfo.txt 2>&1 || true
+
+      - name: Запуск программ
+        env:
+          RUSTICL_ENABLE: llvmpipe
+        working-directory: build/bin
+        run: |
+          for f in task5_device_info task3_helloworld_cpu task1_add_k task2_helloworld_gpu task4_vector_mul; do
+            ./$f < /dev/null > "../../ci-out/linux/run/$f.txt" 2>&1
+            echo $? > "../../ci-out/linux/run/$f.exit"
+            echo "--- $f (код $(cat ../../ci-out/linux/run/$f.exit)) ---"
+            cat "../../ci-out/linux/run/$f.txt"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-output
+          path: ci-out/linux
+
+  windows:
+    name: Windows (MSVC)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Конфигурирование и сборка
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p ci-out/windows/run
+          # SDK на раннере нет, поэтому CMake скачивает заголовки и ICD-загрузчик Khronos
+          cmake -S . -B build -A x64 -DLAB_FORCE_KHRONOS_OPENCL=ON 2>&1 | tee ci-out/windows/build.log
+          cmake --build build --config Release -j 2>&1 | tee -a ci-out/windows/build.log
+
+      - name: Запуск (на раннере нет устройств OpenCL, ожидается сообщение об этом)
+        shell: bash
+        working-directory: build/bin
+        run: |
+          ./task5_device_info.exe < /dev/null > "../../ci-out/windows/run/task5_device_info.txt" 2>&1
+          echo $? > "../../ci-out/windows/run/task5_device_info.exit"
+          cat "../../ci-out/windows/run/task5_device_info.txt"
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: |
+            build/bin/*.exe
+            build/bin/*.cl
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-output
+          path: ci-out/windows
+
+  pages:
+    name: Публикация отчёта на GitHub Pages
+    needs: [linux, windows]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-output
+          path: ci-out/linux
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-output
+          path: ci-out/windows
+
+      - name: Формирование страницы отчёта
+        run: python3 ci/report.py ci-out site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
