@@ -150,3 +150,54 @@ foreach(kernel add_k helloworld vector_mul)
                 "${CMAKE_CURRENT_SOURCE_DIR}/lab1/${kernel}.cl"
                 "${CMAKE_BINARY_DIR}/bin/${kernel}.cl")
 endforeach()
+
+# ---------------------------------------------------------------------
+# Вариант той же работы на CUDA. Собирается, только если найден nvcc,
+# иначе OpenCL-часть строится как обычно.
+# ---------------------------------------------------------------------
+include(CheckLanguage)
+
+# На Windows nvcc умеет работать только с хост-компилятором MSVC: при сборке
+# генератором MinGW Makefiles он всё равно не соберётся, поэтому даже не ищем.
+if(WIN32 AND NOT MSVC)
+    message(STATUS "CUDA: пропущено, на Windows нужен генератор Visual Studio (nvcc требует cl.exe)")
+else()
+    check_language(CUDA)
+    if(NOT CMAKE_CUDA_COMPILER)
+        message(STATUS "CUDA: nvcc не найден, каталог lab1-cuda пропущен")
+    endif()
+endif()
+
+if(CMAKE_CUDA_COMPILER)
+    # Архитектуру нужно задать до enable_language, иначе CMake подставит свою.
+    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
+            set(CMAKE_CUDA_ARCHITECTURES native)   # под установленную видеокарту
+        else()
+            set(CMAKE_CUDA_ARCHITECTURES 75 86)
+        endif()
+    endif()
+
+    enable_language(CUDA)
+    set(CMAKE_CUDA_STANDARD 11)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
+    message(STATUS "CUDA: ${CMAKE_CUDA_COMPILER} (архитектуры: ${CMAKE_CUDA_ARCHITECTURES})")
+
+    foreach(target IN LISTS LAB_TARGETS)
+        add_executable(cuda_${target} lab1-cuda/${target}.cu)
+
+        # Имена совпадают с программами на OpenCL, поэтому кладём их отдельно.
+        set_target_properties(cuda_${target} PROPERTIES
+            OUTPUT_NAME ${target}
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin-cuda"
+            RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin-cuda"
+            RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin-cuda")
+
+        if(MSVC)
+            # /utf-8 нужен хост-компилятору, nvcc передаёт ключ через -Xcompiler
+            target_compile_options(cuda_${target} PRIVATE
+                $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8>)
+        endif()
+    endforeach()
+endif()

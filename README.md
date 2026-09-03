@@ -10,6 +10,7 @@
 | № | Тема | Исходники и описание | Состояние |
 |---|---|---|---|
 | 1 | Знакомство с OpenCL: буферы, ядра, выбор устройства | [lab1/](lab1/README.md) | готово |
+| 1 | Тот же набор заданий на CUDA C, для сравнения подходов | [lab1-cuda/](lab1-cuda/README.md) | эксперимент |
 
 Отчёт последней сборки: [логи и вывод программ на GitHub Pages](https://whitehusky555.github.io/OpenCL-in-specialized-computing/).
 
@@ -17,7 +18,8 @@
 
 | Путь | Что это |
 |---|---|
-| [lab1/](lab1/) | лабораторная работа №1 |
+| [lab1/](lab1/) | лабораторная работа №1 на OpenCL |
+| [lab1-cuda/](lab1-cuda/) | она же на CUDA C, собирается при наличии `nvcc` |
 | [CMakeLists.txt](CMakeLists.txt) | общая сборка всех работ |
 | [.github/workflows/build.yml](.github/workflows/build.yml) | сборка и запуск на серверах GitHub |
 | [ci/report.py](ci/report.py) | формирование страницы отчёта из логов CI |
@@ -33,6 +35,8 @@
   (NVIDIA, AMD, Intel) либо runtime для процессора.
 * SDK ставить не нужно: если `find_package(OpenCL)` ничего не нашёл, CMake скачает
   заголовки и ICD-загрузчик Khronos.
+* Для CUDA-варианта нужны CUDA Toolkit и видеокарта NVIDIA. Без них `nvcc`
+  не находится и каталог `lab1-cuda` просто пропускается.
 
 ## Сборка
 
@@ -41,7 +45,7 @@ cmake -S . -B build
 cmake --build build --config Release
 ```
 
-Бинарники и файлы ядер `.cl` окажутся в `build/bin`.
+Бинарники и файлы ядер `.cl` окажутся в `build/bin`, CUDA-версии — в `build/bin-cuda`.
 
 | Опция | Зачем |
 |---|---|
